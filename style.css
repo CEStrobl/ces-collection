@@ -1,0 +1,67 @@
+body{
+	margin:0px;
+	font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
+}
+
+img{
+	width: 25px;
+	margin: 10px;
+}
+
+.row{
+	display:flex;
+	flex-direction: row;
+	align-items: center;
+    justify-content: center;
+}
+
+.column{
+	display:flex;
+	flex-direction: column;
+	align-items: center;
+    justify-content: center;
+}
+
+.hero{
+	color:white;
+	padding:150px 10px 150px 10px;
+	
+	background-image: repeating-linear-gradient(45deg, hsla(64,83%,54%,0.05) 0px, hsla(64,83%,54%,0.05) 1px,transparent 1px, transparent 11px,hsla(64,83%,54%,0.05) 11px, hsla(64,83%,54%,0.05) 12px,transparent 12px, transparent 32px),repeating-linear-gradient(90deg, hsla(64,83%,54%,0.05) 0px, hsla(64,83%,54%,0.05) 1px,transparent 1px, transparent 11px,hsla(64,83%,54%,0.05) 11px, hsla(64,83%,54%,0.05) 12px,transparent 12px, transparent 32px),repeating-linear-gradient(0deg, hsla(64,83%,54%,0.05) 0px, hsla(64,83%,54%,0.05) 1px,transparent 1px, transparent 11px,hsla(64,83%,54%,0.05) 11px, hsla(64,83%,54%,0.05) 12px,transparent 12px, transparent 32px),repeating-linear-gradient(135deg, hsla(64,83%,54%,0.05) 0px, hsla(64,83%,54%,0.05) 1px,transparent 1px, transparent 11px,hsla(64,83%,54%,0.05) 11px, hsla(64,83%,54%,0.05) 12px,transparent 12px, transparent 32px),linear-gradient(90deg, rgb(30,91,31),rgb(165,204,119));
+}
+
+.hero h1, p{
+	margin:5px;
+}
+
+.hero h1{
+	font-size: 70px;
+}
+
+.hero p{
+	font-weight: 100;
+	letter-spacing: 3px;
+}
+
+.item{
+	display:flex;
+	justify-content: left;
+}
+
+
+.collection{
+	display:flex;
+	align-items: flex-start;
+    justify-content: space-evenly;
+}
+
+a{
+	text-decoration: none;
+	color: black;
+	font-size: 12px;
+}
+
+.links{
+	display:flex;
+	justify-content: flex-start;
+    flex-direction: column;
+}
