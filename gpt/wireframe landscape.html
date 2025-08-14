@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wireframe Landscape</title>
+<style>
+  :root { --bg:#050805; --fg:#18ff6d; }
+  html,body{height:100%}
+  body{ margin:0; background:var(--bg); color:var(--fg); font:14px/1.2 ui-monospace, monospace; overflow:hidden; }
+  #hud{ position:fixed; top:18px; left:18px; text-shadow:0 0 4px rgba(24,255,109,.6); }
+  canvas{ position:fixed; inset:0; }
+</style>
+</head>
+<body>
+  <div id="hud">charlotte.dev — wireframe landscape</div>
+  <canvas id="fx"></canvas>
+
+<script>
+// 80s demo-style scrolling grid with “mountain” noise
+const canvas = document.getElementById('fx');
+const ctx = canvas.getContext('2d');
+let W,H, DPR=Math.min(devicePixelRatio||1,2);
+
+function resize(){
+  W=canvas.width=innerWidth*DPR; H=canvas.height=innerHeight*DPR;
+  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
+}
+addEventListener('resize', resize, {passive:true}); resize();
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// pseudo noise for mountains
+function noise(x){ return Math.sin(x*0.3)*0.5 + Math.sin(x*0.11)*0.3 + Math.sin(x*0.027)*0.2; }
+
+let z=0;
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // horizon gradient
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, 'rgba(24,255,109,0.10)');
+  grad.addColorStop(0.5, 'rgba(24,255,109,0.02)');
+  grad.addColorStop(1, 'rgba(24,255,109,0)');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+
+  const perspective = 800;         // smaller = stronger perspective
+  const gridSize = 60*DPR;         // world units between lines
+  const maxDepth = 30;             // number of rows
+  const centerX = W/2, horizon = H*0.35;
+
+  // draw depth rows from far to near
+  for(let i=1;i<maxDepth;i++){
+    const depth = i + (z%1);
+    const scale = perspective/(perspective + depth*gridSize);
+    const y = horizon + (H*0.6)*scale;
+
+    // “mountains” polyline in the back
+    if(i===maxDepth-1){
+      ctx.beginPath();
+      for(let x=-W; x<=W; x+= 40){
+        const n = noise((x*0.01) + z*0.15);
+        const yy = horizon + n*80*DPR;
+        if(x==-W) ctx.moveTo(x+W/2, yy);
+        else ctx.lineTo(x+W/2, yy);
+      }
+      ctx.strokeStyle='rgba(24,255,109,0.35)';
+      ctx.lineWidth=2*DPR; ctx.stroke();
+    }
+
+    // horizontal grid line
+    ctx.beginPath();
+    ctx.moveTo(0, y); ctx.lineTo(W, y);
+    ctx.strokeStyle = `rgba(24,255,109,${0.3*scale+0.05})`;
+    ctx.lineWidth = 1*DPR; ctx.stroke();
+
+    // vertical grid lines (projected)
+    for(let k=-10;k<=10;k++){
+      const worldX = k*gridSize;
+      const x = centerX + worldX*scale;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      // next row for vertical segment end
+      const depth2 = depth+1;
+      const scale2 = perspective/(perspective + depth2*gridSize);
+      const y2 = horizon + (H*0.6)*scale2;
+      const x2 = centerX + worldX*scale2;
+      ctx.lineTo(x2, y2);
+      ctx.strokeStyle = `rgba(24,255,109,${0.15*scale+0.03})`;
+      ctx.lineWidth=1*DPR; ctx.stroke();
+    }
+  }
+
+  // glow sweep
+  ctx.fillStyle='rgba(24,255,109,0.04)';
+  ctx.fillRect(0, horizon-2*DPR, W, 4*DPR);
+
+  if(!reduce) z += 0.04; // scroll speed
+}
+
+let last=0;
+function loop(ts){
+  if(document.hidden){ last=ts; requestAnimationFrame(loop); return; }
+  if(ts - last > 16){ draw(); last=ts; }
+  requestAnimationFrame(loop);
+}
+document.addEventListener('visibilitychange', ()=> last=0);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

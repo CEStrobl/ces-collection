@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASCII Matrix Rain</title>
+  <style>
+    :root { --bg:#050805; --fg:#18ff6d; }
+    html,body { height:100%; }
+    body {
+      margin:0; background:var(--bg); color:var(--fg);
+      font: 14px/1.1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow:hidden;
+    }
+    .overlay {
+      position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 50% -20%, rgba(24,255,109,.12), transparent 60%),
+        repeating-linear-gradient(0deg, rgba(24,255,109,.04), rgba(24,255,109,.04) 2px, transparent 2px, transparent 4px);
+      mix-blend-mode: screen;
+    }
+    pre {
+      margin:0; position:fixed; inset:0; padding:24px;
+      text-shadow: 0 0 4px rgba(24,255,109,.6);
+      white-space: pre; user-select:none;
+    }
+    header {
+      position:fixed; top:24px; left:24px; z-index:2; pointer-events:none;
+      letter-spacing:.03em;
+    }
+    h1 { margin:0 0 .25rem; font-size:1.25rem; }
+    .sub { opacity:.7; font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>charlotte.dev</h1>
+    <div class="sub">web · js · ascii enjoyer</div>
+  </header>
+
+  <pre id="ascii"></pre>
+  <div class="overlay"></div>
+
+  <script>
+    const el = document.getElementById('ascii');
+    const glyphs = '10110011100101{}[]<>/\\|=+*#@$%^&_—.-:;()';
+    let cols, rows, buffer, drops, charW=8, charH=14;
+
+    function resize() {
+      const w = innerWidth - 48; // padding
+      const h = innerHeight - 48;
+      cols = Math.max(10, Math.floor(w / charW));
+      rows = Math.max(10, Math.floor(h / charH));
+      buffer = Array.from({length: rows}, _ => Array(cols).fill(' '));
+      drops = Array.from({length: cols}, _ => Math.floor(Math.random()*rows));
+    }
+    addEventListener('resize', resize, {passive:true}); resize();
+
+    let last = 0, speed = 33; // ~30fps
+    function tick(ts) {
+      if (ts - last >= speed) {
+        last = ts;
+        // fade: shift rows up and add spaces to bottom
+        for (let r=0; r<rows-1; r++) buffer[r] = buffer[r+1].slice();
+        buffer[rows-1] = Array(cols).fill(' ');
+        // rain
+        for (let c=0; c<cols; c++) {
+          const r = drops[c];
+          buffer[Math.max(0, Math.min(rows-1, r))][c] = glyphs[(Math.random()*glyphs.length)|0];
+          drops[c] = (r + (Math.random()<0.95?1:0)) % rows;
+        }
+        // render
+        el.textContent = buffer.map(row => row.join('')).join('\n');
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // Pause when tab is hidden (battery-friendly)
+    document.addEventListener('visibilitychange', () => {
+      last = 0;
+    });
+  </script>
+</body>
+</html>

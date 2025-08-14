@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wireframe Globe</title>
+  <style>
+    :root { --bg:#050805; --fg:#18ff6d; }
+    html,body { height:100%; }
+    body { margin:0; background:var(--bg); overflow:hidden; }
+    .label {
+      position:fixed; top:24px; left:24px; color:var(--fg);
+      font: 14px/1.2 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-shadow:0 0 4px rgba(24,255,109,.6);
+      pointer-events:none;
+    }
+    canvas { display:block; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    <div><strong>charlotte.dev</strong></div>
+    <div>projects • code • contact</div>
+  </div>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setClearColor(0x050805, 1);
+    document.body.appendChild(renderer.domElement);
+
+    // Wireframe globe
+    const geo = new THREE.IcosahedronGeometry(1, 5); // detail=5 ~ smooth
+    const mat = new THREE.MeshBasicMaterial({ color: 0x18ff6d, wireframe:true, transparent:true, opacity:0.9 });
+    const globe = new THREE.Mesh(geo, mat);
+    scene.add(globe);
+
+    // Lat/long lines (rings)
+    const rings = new THREE.Group();
+    for (let i=0; i<8; i++) {
+      const ringGeo = new THREE.RingGeometry(0.98, 1.0, 256);
+      const ringMat = new THREE.MeshBasicMaterial({ color:0x18ff6d, side:THREE.DoubleSide, transparent:true, opacity:0.15 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = (i/8)*Math.PI - Math.PI/2;
+      rings.add(ring);
+    }
+    scene.add(rings);
+
+    // Subtle glow (sprite-ish)
+    const glowGeo = new THREE.SphereGeometry(1.15, 32, 32);
+    const glowMat = new THREE.MeshBasicMaterial({ color:0x18ff6d, transparent:true, opacity:0.06 });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    scene.add(glow);
+
+    // Mouse parallax
+    let targetRotY = 0, targetRotX = 0;
+    window.addEventListener('pointermove', (e) => {
+      const nx = (e.clientX / innerWidth) * 2 - 1;
+      const ny = (e.clientY / innerHeight) * 2 - 1;
+      targetRotY = nx * 0.3;
+      targetRotX = ny * 0.2;
+    });
+
+    // Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    let t = 0;
+    function animate() {
+      t += 0.01;
+      // Auto rotation + eased mouse influence
+      globe.rotation.y += 0.0025;
+      rings.rotation.y += 0.0025;
+      globe.rotation.x += (targetRotX - globe.rotation.x) * 0.02;
+      globe.rotation.y += (targetRotY - globe.rotation.y) * 0.02 * 0.5;
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>

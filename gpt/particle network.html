@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Particle Network</title>
+<style>
+  :root { --bg:#050805; --fg:#18ff6d; }
+  html,body{height:100%}
+  body{ margin:0; background:var(--bg); color:var(--fg); font:14px/1.2 ui-monospace, monospace; }
+  header{
+    position:fixed; inset:auto 0 24px 0; display:flex; justify-content:center; z-index:2;
+    pointer-events:auto;
+  }
+  nav a{ color:var(--fg); text-decoration:none; margin:0 .75rem; opacity:.9 }
+  nav a:hover{ text-decoration:underline }
+  canvas{ position:fixed; inset:0; display:block; pointer-events:none; } /* keeps links clickable */
+</style>
+</head>
+<body>
+  <canvas id="fx"></canvas>
+  <header><nav>
+    <a href="#projects">projects</a>
+    <a href="#about">about</a>
+    <a href="#contact">contact</a>
+  </nav></header>
+
+<script>
+const c = document.getElementById('fx');
+const ctx = c.getContext('2d');
+let W,H, DPR = Math.min(devicePixelRatio||1, 2);
+let particles=[], mouse={x:0,y:0,active:false};
+const N_BASE = 120, LINK_DIST = 110, SPEED = 0.3;
+
+function resize(){
+  W = c.width = innerWidth * DPR;
+  H = c.height = innerHeight * DPR;
+  c.style.width = innerWidth+'px';
+  c.style.height = innerHeight+'px';
+}
+addEventListener('resize', resize, {passive:true}); resize();
+
+function spawn(){
+  const count = Math.floor(N_BASE * Math.sqrt(innerWidth*innerHeight)/Math.sqrt(1280*720));
+  particles = Array.from({length:count}, _ => ({
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()*2-1)*SPEED*DPR,
+    vy: (Math.random()*2-1)*SPEED*DPR,
+    r: 1 + Math.random()*1.2
+  }));
+}
+spawn();
+addEventListener('resize', spawn, {passive:true});
+
+addEventListener('pointermove', e=>{
+  mouse = { x:e.clientX*DPR, y:e.clientY*DPR, active:true };
+},{passive:true});
+addEventListener('pointerleave', ()=> mouse.active=false);
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let last=0;
+function loop(ts){
+  if(document.hidden || reduce){ last=ts; requestAnimationFrame(loop); return; }
+  const dt = Math.min(33, ts-last||16); last=ts;
+
+  ctx.clearRect(0,0,W,H);
+  // subtle vignette glow
+  ctx.fillStyle='rgba(24,255,109,0.035)';
+  ctx.fillRect(0,0,W,H);
+
+  // update + draw
+  for(const p of particles){
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    if(p.x<0||p.x>W) p.vx*=-1;
+    if(p.y<0||p.y>H) p.vy*=-1;
+    // mouse attract
+    if(mouse.active){
+      const dx = (mouse.x - p.x), dy=(mouse.y - p.y);
+      const d2 = dx*dx+dy*dy; if(d2< (180*DPR)**2){
+        p.vx += dx*0.000003*dt; p.vy += dy*0.000003*dt;
+      }
+    }
+  }
+
+  // links
+  for(let i=0;i<particles.length;i++){
+    const a = particles[i];
+    for(let j=i+1;j<particles.length;j++){
+      const b = particles[j];
+      const dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+      if(d < LINK_DIST*DPR){
+        const alpha = 0.15 * (1 - d/(LINK_DIST*DPR));
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = `rgba(24,255,109,${alpha})`;
+        ctx.lineWidth = DPR*0.8;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // points
+  for(const p of particles){
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r*DPR, 0, Math.PI*2);
+    ctx.fillStyle='rgba(24,255,109,0.85)';
+    ctx.shadowColor='rgba(24,255,109,0.9)';
+    ctx.shadowBlur=8*DPR;
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+
+  requestAnimationFrame(loop);
+}
+document.addEventListener('visibilitychange', ()=> last=0);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

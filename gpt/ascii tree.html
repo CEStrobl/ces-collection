@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ASCII Tree</title>
+<style>
+  :root { --bg:#050805; --fg:#18ff6d; }
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:14px/1.1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    display:grid; place-items:center; overflow:hidden;
+  }
+  pre{ margin:0; text-shadow:0 0 4px rgba(24,255,109,.6); user-select:none;}
+  .label{ position:fixed; top:18px; left:18px; opacity:.85 }
+</style>
+</head>
+<body>
+  <div class="label">charlotte.dev — ascii tree</div>
+  <pre id="out"></pre>
+
+<script>
+/* L-system: F → FF-[-F+F+F]+[+F-F-F], angle 22.5° (small randomization) */
+const W = 100, H = 42;                   // text buffer size
+const out = document.getElementById('out');
+let buf = Array.from({length:H},()=>Array(W).fill(' '));
+
+function lsystem(iter=4){
+  let s="F";
+  const rules = { "F": "FF-[-F+F+F]+[+F-F-F]" };
+  for(let i=0;i<iter;i++){
+    let n=""; for(const ch of s) n+= rules[ch]||ch; s=n;
+  }
+  return s;
+}
+
+// Simple “turtle” drawing into a char grid
+function drawSystem(seq){
+  // map turtle space to ASCII grid
+  const cx = W/2, cy = H-2;
+  let x=0, y=0, ang = -Math.PI/2; // start going up
+  const stack=[];
+  const step = 1.0, dAng = (Math.PI/8) * (0.9 + Math.random()*0.2); // ~22.5° jitter
+  // Track stroke order for growth animation
+  const strokes=[];
+  function put(x0,y0,x1,y1){
+    // DDA line
+    const dx=x1-x0, dy=y1-y0, steps=Math.max(Math.abs(dx),Math.abs(dy))*2;
+    for(let i=0;i<=steps;i++){
+      const px = x0 + dx*(i/steps), py = y0 + dy*(i/steps);
+      const gx = Math.round(cx + px), gy = Math.round(cy + py);
+      if(gx>=0&&gx<W&&gy>=0&&gy<H){
+        const ch = dy<0? '|': (dx>0? '\\' : '/');
+        strokes.push([gy,gx,ch]);
+      }
+    }
+  }
+  for(const ch of seq){
+    if(ch==='F'){
+      const nx = x + Math.cos(ang)*step;
+      const ny = y + Math.sin(ang)*step;
+      put(x,y,nx,ny);
+      x=nx; y=ny;
+    } else if(ch==='+'){ ang += dAng; }
+      else if(ch==='-'){ ang -= dAng; }
+      else if(ch==='['){ stack.push([x,y,ang]); }
+      else if(ch===']'){ [x,y,ang]=stack.pop()||[x,y,ang]; }
+  }
+  return strokes;
+}
+
+function render(progress){
+  // copy blank
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++) buf[r][c]=' ';
+  const n = Math.floor(strokes.length * progress);
+  for(let i=0;i<n;i++){
+    const [r,c,ch]=strokes[i];
+    buf[r][c]=ch;
+  }
+  // trunk shading & leaves hint
+  for(let r=0;r<H;r++){
+    for(let c=1;c<W-1;c++){
+      if(buf[r][c]===' ' && (buf[r-1]?.[c-1]==='\\' || buf[r-1]?.[c+1]==='/' )) {
+        if(Math.random()<0.08) buf[r][c]='*'; // sparse “leaves”
+      }
+    }
+  }
+  out.textContent = buf.map(row=>row.join('')).join('\n');
+}
+
+const seq = lsystem(4);
+const strokes = drawSystem(seq);
+
+// animate growth
+let start=null, dur=3000;
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function step(ts){
+  if(!start) start=ts;
+  const t = reduce? 1 : Math.min(1, (ts-start)/dur);
+  render(t);
+  if(t<1) requestAnimationFrame(step);
+}
+document.addEventListener('visibilitychange', ()=> start=null);
+requestAnimationFrame(step);
+</script>
+</body>
+</html>
