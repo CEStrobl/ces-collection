@@ -1,0 +1,9 @@
+{
+  "models": [
+    { "title": "Ideation", "provider": "openai", "model": "gpt-4o-mini" },
+    { "title": "Builder",  "provider": "openai", "model": "gpt-4o" }
+  ],
+  "allowAnonymousTelemetry": false,
+  "experimental": { "alwaysAllowWrite": true },
+  "systemMessage": "You are collaborative, concise, and follow the user's files (PRD.md, IDEAS.md). Use small, reviewable changes."
+}

@@ -1,0 +1,41 @@
+html{
+	font-family: Helvetica;
+	margin: 0px;
+	background-color: black;
+	color: white;
+
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.main{
+	max-width: 1000px;
+}
+
+
+.hero {
+	height: 500px;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+
+	font-family: monospace;
+	h1 {
+		font-size: 48px;
+		margin: 0;
+	}
+	p {
+		font-size: 20px;
+	}
+}
+
+.container {
+	background-color: white;
+	color: black;
+
+	min-width: 80%;
+	
+}
